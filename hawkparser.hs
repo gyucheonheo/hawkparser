@@ -1,7 +1,7 @@
 import Data.Char
 import Data.List
 
-data Ptree = VAR String | ID String | FCN String [Ptree] deriving (Show, Eq, Read)
+data Ptree = ID String | VAR String | FCN String [Ptree] deriving (Show, Read)
 
 data State s a = State {
   run :: s -> Maybe (a, s)
@@ -38,8 +38,45 @@ class Applicative f => Alternative f where
 instance Alternative (State s) where
   empty = State $ \s -> Nothing
 
-  p <|> q = State $ \s -> case run p s of Nothing -> run q s
-                                          r -> r
+  p <|> q = State $ \s -> case run p s of
+                            Nothing -> run q s
+                            r -> r                
+expression :: Parser Ptree
+expression = do l <- (variable <|> functionCall <|> identifier)
+                return l
+
+identifier :: Parser Ptree
+identifier = do l <- lower_letter
+                ls <- many (alphanum <|> underscore)
+                return $ ID (l:ls)
+
+variable :: Parser Ptree
+variable =  do l <- upper_letter
+               ls <- many (alphanum <|> underscore)
+               return $ VAR (l:ls)
+
+functionCall :: Parser Ptree
+functionCall = do n <- identifier
+                  symbol "("
+                  args <- arguments
+                  symbol ")"
+                  return $ FCN (decompose n) args
+
+arguments :: Parser [Ptree]
+arguments = do l <- expression
+               ls <- argTail
+               return (l:ls)
+            <|> do pure []
+                   return []
+
+
+argTail :: Parser [Ptree]
+argTail = do symbol ","
+             l <- expression
+             ls <- argTail
+             return (l:ls)
+          <|> do pure []
+                 return []
 
 item :: Parser Char
 item = State $ \str -> case str of "" -> Nothing
@@ -49,6 +86,10 @@ sat :: (Char -> Bool) -> Parser Char
 sat p = do c <- item
            if p c then return c else empty
 
+decompose a = case a of
+                ID x -> x
+                VAR x -> x
+                
 isUnderscore :: Char -> Bool
 isUnderscore x = if x == '_' then True else False
 
@@ -104,39 +145,3 @@ symbol s = token (string s)
 
 integer :: Parser Int
 integer = token int
-
-expression = do l <- (identifier <|> variable )
-                return l
-
-identifier :: Parser String
-identifier = token $ do l <- lower_letter
-                        ls <- many (alphanum <|> underscore)
-                        return (l:ls)
-
-variable :: Parser String
-variable = token $ do l <- upper_letter
-                      ls <- many (alphanum <|> underscore)
-                      return (l:ls)
-
-functionCall :: Parser (String, [String])
-functionCall = token $ do id <- identifier
-                          symbol "("
-                          args <- arguments
-                          symbol ")"
-                          return (id, args)
-
-arguments :: Parser [String]
-arguments = token $ do l <- expression
-                       ls <- argTail
-                       return (l:ls)
-                    <|> do pure []
-                           return []
-
-argTail :: Parser [String]
-argTail = token $ do symbol ","
-                     l <- expression
-                     ls <- argTail
-                     return (l:ls)
-                  <|> do pure []
-                         return []
-
