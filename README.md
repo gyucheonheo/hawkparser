@@ -25,9 +25,11 @@ $> ghci
 ### Enjoy parsing
 ``` bash
 (ghci)$>run expression "f(a,b)"
+==> Just (FCN "f" [ID "a", ID "b"], "")
 ```
 
 ``` bash
-(ghci)$>run identifier "itistrue"
+(ghci)$>run expression "f(a,b,g(a,b))"
+==> Just (FCN "f" [ID "a",ID "b",FCN "g" [ID "a",ID "b"]],"") 
 ```
 
