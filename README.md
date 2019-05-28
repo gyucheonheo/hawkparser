@@ -3,10 +3,10 @@
 Implementation of Parser using Monad
 
 ## Language Syntax
-* Expression -> Variable | Identifier | FCN (Note that FCN in Expression is still in progress 🐌)
+* Expression -> Variable | Identifier | FunctionCall
 * Identifier -> [a-z][a-zA-Z0-9|_]*
 * Variable -> [A-Z][a-zA-Z0-9|_]*
-* FCN -> Identifier(Arguments)
+* FunctionCall -> Identifier(Arguments)
 * Arguments -> Expression ArgTail | empty
 * ArgTail -> , Expression ArgTail | empty
 
